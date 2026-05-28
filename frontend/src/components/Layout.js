@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Layout, Menu, Button, Space, Badge } from 'antd';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -27,14 +27,27 @@ const menuItems = [
 function AppLayout({ children, user, onLogout }) {
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
+  const timerRef = useRef(null);
 
   useEffect(() => {
-    if (user) {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const fetchUnread = () => {
       messageService.getUnreadCount()
         .then(res => setUnreadCount(res.data.count))
         .catch(() => {});
-    }
-  }, [user, location.pathname]);
+    };
+
+    fetchUnread();
+    timerRef.current = setInterval(fetchUnread, 30000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [user]);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
