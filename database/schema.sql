@@ -188,6 +188,120 @@ CREATE TABLE topic_replies (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='话题回复表';
 
 -- ============================================
+-- 6. 消息通知模块
+-- ============================================
+
+-- 通知表
+CREATE TABLE notifications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    recipient_id BIGINT NOT NULL,
+    sender_id BIGINT NULL,
+    notification_type VARCHAR(20) NOT NULL COMMENT '通知类型: comment/like/reply/system',
+    title VARCHAR(200) NOT NULL COMMENT '标题',
+    content VARCHAR(500) NOT NULL COMMENT '内容',
+    related_type VARCHAR(20) NULL COMMENT '关联类型: experience/topic/news',
+    related_id INT UNSIGNED NULL COMMENT '关联ID',
+    is_read TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已读',
+    created_at DATETIME(6) NOT NULL,
+    INDEX idx_recipient (recipient_id),
+    INDEX idx_read (is_read),
+    INDEX idx_created (created_at),
+    FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通知表';
+
+-- 会话表
+CREATE TABLE conversations (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user1_id BIGINT NOT NULL,
+    user2_id BIGINT NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    UNIQUE KEY uk_users (user1_id, user2_id),
+    INDEX idx_user1 (user1_id),
+    INDEX idx_user2 (user2_id),
+    FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会话表';
+
+-- 私信表
+CREATE TABLE private_messages (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    conversation_id BIGINT NOT NULL,
+    sender_id BIGINT NOT NULL,
+    content TEXT NOT NULL COMMENT '消息内容',
+    is_read TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已读',
+    created_at DATETIME(6) NOT NULL,
+    INDEX idx_conversation (conversation_id),
+    INDEX idx_sender (sender_id),
+    FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='私信表';
+
+-- ============================================
+-- 7. 学习计划模块
+-- ============================================
+
+-- 学习计划表
+CREATE TABLE study_plans (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(200) NOT NULL COMMENT '计划名称',
+    description TEXT COMMENT '计划描述',
+    exam_type VARCHAR(20) NOT NULL COMMENT '备考类型: kaoyan/kaogong',
+    target_date DATE NOT NULL COMMENT '目标日期',
+    status VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT '状态: active/completed/abandoned',
+    created_at DATETIME(6) NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    INDEX idx_user (user_id),
+    INDEX idx_status (status),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学习计划表';
+
+-- 待办事项表
+CREATE TABLE todo_items (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    plan_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(200) NOT NULL COMMENT '待办事项',
+    description TEXT COMMENT '详细描述',
+    due_date DATE NULL COMMENT '截止日期',
+    priority VARCHAR(10) NOT NULL DEFAULT 'medium' COMMENT '优先级: high/medium/low',
+    is_completed TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否完成',
+    completed_at DATETIME(6) NULL COMMENT '完成时间',
+    created_at DATETIME(6) NOT NULL,
+    INDEX idx_plan (plan_id),
+    INDEX idx_user (user_id),
+    INDEX idx_completed (is_completed),
+    FOREIGN KEY (plan_id) REFERENCES study_plans(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='待办事项表';
+
+-- ============================================
+-- 8. 内容审核模块
+-- ============================================
+
+-- 举报表
+CREATE TABLE reports (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    reporter_id BIGINT NOT NULL,
+    content_type VARCHAR(20) NOT NULL COMMENT '内容类型: experience/topic/topic_reply/comment/resource',
+    object_id INT UNSIGNED NOT NULL COMMENT '内容ID',
+    reason VARCHAR(20) NOT NULL COMMENT '举报原因: spam/ads/inappropriate/plagiarism/other',
+    description TEXT COMMENT '详细描述',
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT '状态: pending/resolved/dismissed',
+    handler_id BIGINT NULL,
+    result TEXT COMMENT '处理结果',
+    created_at DATETIME(6) NOT NULL,
+    resolved_at DATETIME(6) NULL,
+    INDEX idx_reporter (reporter_id),
+    INDEX idx_status (status),
+    INDEX idx_content (content_type, object_id),
+    FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (handler_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='举报表';
+
+-- ============================================
 -- 初始数据
 -- ============================================
 

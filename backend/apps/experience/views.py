@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from .models import ExperiencePost, Comment, Like
 from .serializers import ExperienceListSerializer, ExperienceDetailSerializer, CommentSerializer
 from apps.permissions import IsOwnerOrReadOnly
+from apps.messages.utils import create_notification
 
 
 class ExperienceViewSet(viewsets.ModelViewSet):
@@ -41,6 +42,15 @@ class ExperienceViewSet(viewsets.ModelViewSet):
         if created:
             post.likes += 1
             post.save(update_fields=['likes'])
+            create_notification(
+                recipient=post.author,
+                sender=request.user,
+                notification_type='like',
+                title='收到新点赞',
+                content=f'{request.user.username} 赞了你的帖子「{post.title}」',
+                related_type='experience',
+                related_id=post.id,
+            )
             return Response({'likes': post.likes, 'is_liked': True})
         else:
             like.delete()
@@ -57,4 +67,14 @@ class CommentViewSet(viewsets.ModelViewSet):
         return Comment.objects.filter(post_id=self.kwargs.get('post_pk'))
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user, post_id=self.kwargs.get('post_pk'))
+        comment = serializer.save(author=self.request.user, post_id=self.kwargs.get('post_pk'))
+        post = comment.post
+        create_notification(
+            recipient=post.author,
+            sender=self.request.user,
+            notification_type='comment',
+            title='收到新评论',
+            content=f'{self.request.user.username} 评论了你的帖子「{post.title}」',
+            related_type='experience',
+            related_id=post.id,
+        )

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Layout, Menu, Button, Space } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Layout, Menu, Button, Space, Badge } from 'antd';
 import { Link, useLocation } from 'react-router-dom';
 import {
   HomeOutlined,
@@ -8,7 +8,10 @@ import {
   CloudDownloadOutlined,
   CommentOutlined,
   UserOutlined,
+  BellOutlined,
+  ScheduleOutlined,
 } from '@ant-design/icons';
+import { messageService } from '../services';
 
 const { Header, Content, Footer } = Layout;
 
@@ -18,10 +21,20 @@ const menuItems = [
   { key: '/experience', icon: <EditOutlined />, label: <Link to="/experience">经验交流</Link> },
   { key: '/resources', icon: <CloudDownloadOutlined />, label: <Link to="/resources">资源下载</Link> },
   { key: '/topics', icon: <CommentOutlined />, label: <Link to="/topics">话题讨论</Link> },
+  { key: '/studyplan', icon: <ScheduleOutlined />, label: <Link to="/studyplan">学习计划</Link> },
 ];
 
 function AppLayout({ children, user, onLogout }) {
   const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      messageService.getUnreadCount()
+        .then(res => setUnreadCount(res.data.count))
+        .catch(() => {});
+    }
+  }, [user, location.pathname]);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -39,6 +52,11 @@ function AppLayout({ children, user, onLogout }) {
         <Space>
           {user ? (
             <>
+              <Link to="/messages">
+                <Badge count={unreadCount} size="small">
+                  <Button type="text" icon={<BellOutlined />} style={{ color: '#fff' }} />
+                </Badge>
+              </Link>
               <Link to="/profile">
                 <Button type="text" icon={<UserOutlined />} style={{ color: '#fff' }}>
                   {user.username}

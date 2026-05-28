@@ -25,6 +25,9 @@ INSTALLED_APPS = [
     'apps.experience',
     'apps.resources',
     'apps.topics',
+    'apps.messages',
+    'apps.studyplan',
+    'apps.moderation',
 ]
 
 MIDDLEWARE = [

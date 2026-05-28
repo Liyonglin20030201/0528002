@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Typography, Tag, Space, Spin, Button, List, Input, message } from 'antd';
+import { Card, Typography, Tag, Space, Spin, Button, List, Input, message, Modal, Select, Form } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
-import { EyeOutlined, LikeOutlined, LikeFilled, StarOutlined } from '@ant-design/icons';
-import { experienceService, authService } from '../services';
+import { EyeOutlined, LikeOutlined, LikeFilled, StarOutlined, FlagOutlined } from '@ant-design/icons';
+import { experienceService, authService, moderationService } from '../services';
 
 const { Title, Paragraph } = Typography;
 
@@ -14,6 +14,7 @@ function ExperienceDetail() {
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const loadPost = () => {
     experienceService.getDetail(id).then(res => setPost(res.data)).finally(() => setLoading(false));
@@ -38,6 +39,16 @@ function ExperienceDetail() {
       message.success('收藏成功');
     } catch {
       message.error('请先登录');
+    }
+  };
+
+  const handleReport = async (values) => {
+    try {
+      await moderationService.createReport({ content_type: 'experience', object_id: parseInt(id), ...values });
+      message.success('举报已提交');
+      setReportOpen(false);
+    } catch {
+      message.error('举报失败，请先登录');
     }
   };
 
@@ -89,6 +100,7 @@ function ExperienceDetail() {
             {isLiked ? '已点赞' : '点赞'} ({post.likes})
           </Button>
           <Button icon={<StarOutlined />} onClick={handleFavorite}>收藏</Button>
+          <Button icon={<FlagOutlined />} onClick={() => setReportOpen(true)} danger>举报</Button>
           <Button onClick={() => navigate(-1)}>返回</Button>
         </Space>
       </Card>
@@ -117,6 +129,26 @@ function ExperienceDetail() {
           发表评论
         </Button>
       </Card>
+
+      <Modal title="举报内容" open={reportOpen} onCancel={() => setReportOpen(false)} footer={null}>
+        <Form layout="vertical" onFinish={handleReport}>
+          <Form.Item name="reason" label="举报原因" rules={[{ required: true, message: '请选择举报原因' }]}>
+            <Select placeholder="选择原因">
+              <Select.Option value="spam">垃圾信息</Select.Option>
+              <Select.Option value="ads">广告</Select.Option>
+              <Select.Option value="inappropriate">不当内容</Select.Option>
+              <Select.Option value="plagiarism">抄袭</Select.Option>
+              <Select.Option value="other">其他</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="description" label="详细描述">
+            <Input.TextArea rows={3} placeholder="补充说明（选填）" />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>提交举报</Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

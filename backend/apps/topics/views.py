@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from .models import Topic, TopicCategory, TopicReply
 from .serializers import TopicListSerializer, TopicDetailSerializer, TopicCategorySerializer, TopicReplySerializer
 from apps.permissions import IsOwnerOrReadOnly
+from apps.messages.utils import create_notification
 
 
 class TopicCategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -49,4 +50,14 @@ class TopicReplyViewSet(viewsets.ModelViewSet):
         return TopicReply.objects.filter(topic_id=self.kwargs.get('topic_pk'))
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user, topic_id=self.kwargs.get('topic_pk'))
+        reply = serializer.save(author=self.request.user, topic_id=self.kwargs.get('topic_pk'))
+        topic = reply.topic
+        create_notification(
+            recipient=topic.author,
+            sender=self.request.user,
+            notification_type='reply',
+            title='收到新回复',
+            content=f'{self.request.user.username} 回复了你的话题「{topic.title}」',
+            related_type='topic',
+            related_id=topic.id,
+        )

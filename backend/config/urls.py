@@ -10,6 +10,9 @@ urlpatterns = [
     path('api/experience/', include('apps.experience.urls')),
     path('api/resources/', include('apps.resources.urls')),
     path('api/topics/', include('apps.topics.urls')),
+    path('api/messages/', include('apps.messages.urls')),
+    path('api/studyplan/', include('apps.studyplan.urls')),
+    path('api/moderation/', include('apps.moderation.urls')),
 ]
 
 if settings.DEBUG:
