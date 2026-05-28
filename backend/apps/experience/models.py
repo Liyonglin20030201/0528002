@@ -38,3 +38,15 @@ class Comment(models.Model):
         ordering = ['created_at']
         verbose_name = '评论'
         verbose_name_plural = verbose_name
+
+
+class Like(models.Model):
+    post = models.ForeignKey(ExperiencePost, on_delete=models.CASCADE, related_name='like_records', verbose_name='帖子')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='点赞用户')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='点赞时间')
+
+    class Meta:
+        db_table = 'experience_likes'
+        unique_together = ('post', 'user')
+        verbose_name = '点赞'
+        verbose_name_plural = verbose_name

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Typography, Tag, Space, Spin, Button, List, Input, message } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
-import { EyeOutlined, LikeOutlined, StarOutlined } from '@ant-design/icons';
+import { EyeOutlined, LikeOutlined, LikeFilled, StarOutlined } from '@ant-design/icons';
 import { experienceService, authService } from '../services';
 
 const { Title, Paragraph } = Typography;
@@ -13,6 +13,7 @@ function ExperienceDetail() {
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
   const loadPost = () => {
     experienceService.getDetail(id).then(res => setPost(res.data)).finally(() => setLoading(false));
@@ -24,6 +25,8 @@ function ExperienceDetail() {
     try {
       const res = await experienceService.like(id);
       setPost({ ...post, likes: res.data.likes });
+      setIsLiked(res.data.is_liked);
+      message.success(res.data.is_liked ? '点赞成功' : '已取消点赞');
     } catch {
       message.error('请先登录');
     }
@@ -78,7 +81,13 @@ function ExperienceDetail() {
           {post.content}
         </Paragraph>
         <Space>
-          <Button icon={<LikeOutlined />} onClick={handleLike}>点赞 ({post.likes})</Button>
+          <Button
+            type={isLiked ? 'primary' : 'default'}
+            icon={isLiked ? <LikeFilled /> : <LikeOutlined />}
+            onClick={handleLike}
+          >
+            {isLiked ? '已点赞' : '点赞'} ({post.likes})
+          </Button>
           <Button icon={<StarOutlined />} onClick={handleFavorite}>收藏</Button>
           <Button onClick={() => navigate(-1)}>返回</Button>
         </Space>

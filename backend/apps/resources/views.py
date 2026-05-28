@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Resource, ResourceCategory
 from .serializers import ResourceSerializer, ResourceCategorySerializer
+from apps.permissions import IsOwnerOrReadOnly
 
 
 class ResourceCategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -19,7 +20,9 @@ class ResourceViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'download_count']
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated(), IsOwnerOrReadOnly()]
+        if self.action == 'create':
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
 

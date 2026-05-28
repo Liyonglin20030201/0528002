@@ -1,8 +1,9 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import ExperiencePost, Comment
+from .models import ExperiencePost, Comment, Like
 from .serializers import ExperienceListSerializer, ExperienceDetailSerializer, CommentSerializer
+from apps.permissions import IsOwnerOrReadOnly
 
 
 class ExperienceViewSet(viewsets.ModelViewSet):
@@ -17,7 +18,9 @@ class ExperienceViewSet(viewsets.ModelViewSet):
         return ExperienceDetailSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated(), IsOwnerOrReadOnly()]
+        if self.action == 'create':
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
 
@@ -34,14 +37,21 @@ class ExperienceViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def like(self, request, pk=None):
         post = self.get_object()
-        post.likes += 1
-        post.save(update_fields=['likes'])
-        return Response({'likes': post.likes})
+        like, created = Like.objects.get_or_create(post=post, user=request.user)
+        if created:
+            post.likes += 1
+            post.save(update_fields=['likes'])
+            return Response({'likes': post.likes, 'is_liked': True})
+        else:
+            like.delete()
+            post.likes = max(0, post.likes - 1)
+            post.save(update_fields=['likes'])
+            return Response({'likes': post.likes, 'is_liked': False})
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         return Comment.objects.filter(post_id=self.kwargs.get('post_pk'))

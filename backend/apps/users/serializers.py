@@ -36,7 +36,27 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+
     class Meta:
         model = Favorite
-        fields = ('id', 'content_type', 'object_id', 'created_at')
+        fields = ('id', 'content_type', 'object_id', 'title', 'created_at')
         read_only_fields = ('id', 'created_at')
+
+    def get_title(self, obj):
+        from apps.news.models import News
+        from apps.experience.models import ExperiencePost
+        from apps.resources.models import Resource
+        from apps.topics.models import Topic
+
+        model_map = {
+            'news': News,
+            'experience': ExperiencePost,
+            'resource': Resource,
+            'topic': Topic,
+        }
+        model_cls = model_map.get(obj.content_type)
+        if model_cls:
+            instance = model_cls.objects.filter(id=obj.object_id).first()
+            return instance.title if instance else '内容已删除'
+        return ''
