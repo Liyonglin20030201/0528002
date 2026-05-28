@@ -347,6 +347,7 @@ INSERT INTO topic_categories (name, category_type, description) VALUES
 CREATE TABLE study_records (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
+    plan_id BIGINT NULL COMMENT '关联学习计划',
     date DATE NOT NULL COMMENT '学习日期',
     duration INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '学习时长(分钟)',
     subject VARCHAR(50) DEFAULT '' COMMENT '学习科目',
@@ -354,7 +355,9 @@ CREATE TABLE study_records (
     created_at DATETIME(6) NOT NULL,
     UNIQUE KEY uk_user_date_subject (user_id, date, subject),
     INDEX idx_user_date (user_id, date),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    INDEX idx_plan (plan_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (plan_id) REFERENCES study_plans(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学习记录表';
 
 -- 打卡表

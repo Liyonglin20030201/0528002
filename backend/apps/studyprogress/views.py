@@ -7,12 +7,13 @@ from django.db.models.functions import TruncDate
 from datetime import timedelta
 from .models import StudyRecord, CheckIn
 from .serializers import StudyRecordSerializer, CheckInSerializer
+from apps.studyplan.models import StudyPlan
 
 
 class StudyRecordViewSet(viewsets.ModelViewSet):
     serializer_class = StudyRecordSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filterset_fields = ['date', 'subject']
+    filterset_fields = ['date', 'subject', 'plan']
 
     def get_queryset(self):
         return StudyRecord.objects.filter(user=self.request.user)
@@ -46,6 +47,48 @@ class StudyRecordViewSet(viewsets.ModelViewSet):
             'avg_duration': round(total_duration / study_days) if study_days > 0 else 0,
             'subject_stats': list(subject_stats),
         })
+
+    @action(detail=False, methods=['get'])
+    def reminders(self, request):
+        today = timezone.now().date()
+        days_ahead = int(request.query_params.get('days', 7))
+        deadline = today + timedelta(days=days_ahead)
+
+        plans = StudyPlan.objects.filter(
+            user=request.user,
+            status='active',
+            target_date__lte=deadline,
+        ).order_by('target_date')
+
+        reminders = []
+        for plan in plans:
+            days_left = (plan.target_date - today).days
+            total_todos = plan.todos.count()
+            completed_todos = plan.todos.filter(is_completed=True).count()
+            total_study_duration = StudyRecord.objects.filter(
+                user=request.user, plan=plan
+            ).aggregate(total=Sum('duration'))['total'] or 0
+
+            if days_left < 0:
+                urgency = 'overdue'
+            elif days_left <= 3:
+                urgency = 'urgent'
+            else:
+                urgency = 'upcoming'
+
+            reminders.append({
+                'plan_id': plan.id,
+                'title': plan.title,
+                'exam_type': plan.exam_type,
+                'target_date': plan.target_date.isoformat(),
+                'days_left': days_left,
+                'urgency': urgency,
+                'todo_total': total_todos,
+                'todo_completed': completed_todos,
+                'total_study_duration': total_study_duration,
+            })
+
+        return Response(reminders)
 
 
 class CheckInViewSet(viewsets.ReadOnlyModelViewSet):

@@ -4,6 +4,7 @@ from django.conf import settings
 
 class StudyRecord(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='study_records', verbose_name='用户')
+    plan = models.ForeignKey('studyplan.StudyPlan', on_delete=models.SET_NULL, null=True, blank=True, related_name='study_records', verbose_name='关联计划')
     date = models.DateField(verbose_name='学习日期')
     duration = models.PositiveIntegerField(default=0, verbose_name='学习时长(分钟)')
     subject = models.CharField(max_length=50, blank=True, default='', verbose_name='学习科目')

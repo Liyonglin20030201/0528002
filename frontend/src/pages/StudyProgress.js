@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Row, Col, Statistic, Button, Modal, Form, Input, InputNumber, DatePicker, Select, Table, message, Progress, Tag, Space, Empty } from 'antd';
-import { CheckCircleOutlined, FireOutlined, ClockCircleOutlined, CalendarOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Statistic, Button, Modal, Form, Input, InputNumber, DatePicker, Select, Table, message, Progress, Tag, Space, Empty, Alert, List } from 'antd';
+import { CheckCircleOutlined, FireOutlined, ClockCircleOutlined, CalendarOutlined, WarningOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { progressService } from '../services';
+import { progressService, studyplanService } from '../services';
 
 function StudyProgress() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [streak, setStreak] = useState(null);
   const [records, setRecords] = useState([]);
+  const [reminders, setReminders] = useState([]);
+  const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
@@ -15,14 +19,18 @@ function StudyProgress() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [statsRes, streakRes, recordsRes] = await Promise.all([
+      const [statsRes, streakRes, recordsRes, remindersRes, plansRes] = await Promise.all([
         progressService.getStatistics({ days: 30 }),
         progressService.getStreak(),
         progressService.getRecords(),
+        progressService.getReminders({ days: 7 }),
+        studyplanService.getPlans({ status: 'active' }),
       ]);
       setStats(statsRes.data);
       setStreak(streakRes.data);
       setRecords(recordsRes.data.results || recordsRes.data);
+      setReminders(remindersRes.data);
+      setPlans(plansRes.data.results || plansRes.data);
     } catch { /* ignore */ } finally { setLoading(false); }
   };
 
@@ -43,6 +51,7 @@ function StudyProgress() {
       await progressService.createRecord({
         ...values,
         date: values.date.format('YYYY-MM-DD'),
+        plan: values.plan || null,
       });
       message.success('学习记录已添加');
       setModalOpen(false);
@@ -55,6 +64,7 @@ function StudyProgress() {
 
   const columns = [
     { title: '日期', dataIndex: 'date', key: 'date' },
+    { title: '关联计划', dataIndex: 'plan_title', key: 'plan_title', render: (t) => t ? <Tag color="blue">{t}</Tag> : <span style={{ color: '#999' }}>无</span> },
     { title: '科目', dataIndex: 'subject', key: 'subject', render: (t) => t || '未分类' },
     { title: '时长(分钟)', dataIndex: 'duration', key: 'duration' },
     { title: '备注', dataIndex: 'note', key: 'note' },
@@ -64,8 +74,58 @@ function StudyProgress() {
     ? Math.max(...stats.daily_stats.map(d => d.total_duration))
     : 0;
 
+  const urgencyConfig = {
+    overdue: { color: '#f5222d', text: '已逾期', icon: <ExclamationCircleOutlined /> },
+    urgent: { color: '#fa8c16', text: '即将到期', icon: <WarningOutlined /> },
+    upcoming: { color: '#1890ff', text: '临近', icon: <CalendarOutlined /> },
+  };
+
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+      {reminders.length > 0 && (
+        <Card
+          title={<span><WarningOutlined style={{ color: '#fa8c16', marginRight: 8 }} />学习目标提醒</span>}
+          style={{ marginBottom: 24 }}
+          size="small"
+        >
+          <List
+            dataSource={reminders}
+            renderItem={item => {
+              const cfg = urgencyConfig[item.urgency];
+              return (
+                <List.Item
+                  actions={[
+                    <Button size="small" type="link" onClick={() => navigate(`/studyplan/${item.plan_id}`)}>
+                      查看计划
+                    </Button>
+                  ]}
+                >
+                  <List.Item.Meta
+                    title={
+                      <Space>
+                        <Tag color={cfg.color} icon={cfg.icon}>{cfg.text}</Tag>
+                        <span>{item.title}</span>
+                        <Tag>{item.exam_type === 'kaoyan' ? '考研' : '考公'}</Tag>
+                      </Space>
+                    }
+                    description={
+                      <Space>
+                        <span>目标日期: {item.target_date}</span>
+                        <span style={{ color: cfg.color, fontWeight: 'bold' }}>
+                          {item.days_left >= 0 ? `剩余${item.days_left}天` : `已逾期${Math.abs(item.days_left)}天`}
+                        </span>
+                        <span>待办进度: {item.todo_completed}/{item.todo_total}</span>
+                        <span>已学习: {item.total_study_duration}分钟</span>
+                      </Space>
+                    }
+                  />
+                </List.Item>
+              );
+            }}
+          />
+        </Card>
+      )}
+
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={6}>
           <Card>
@@ -198,6 +258,13 @@ function StudyProgress() {
 
       <Modal title="添加学习记录" open={modalOpen} onCancel={() => setModalOpen(false)} footer={null}>
         <Form form={form} layout="vertical" onFinish={handleAddRecord} initialValues={{ date: dayjs() }}>
+          <Form.Item name="plan" label="关联学习计划">
+            <Select placeholder="选择关联计划(可选)" allowClear>
+              {plans.map(p => (
+                <Select.Option key={p.id} value={p.id}>{p.title}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
           <Form.Item name="date" label="学习日期" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>

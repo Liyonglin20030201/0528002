@@ -77,6 +77,7 @@ export const progressService = {
   updateRecord: (id, data) => api.patch(`/progress/records/${id}/`, data),
   deleteRecord: (id) => api.delete(`/progress/records/${id}/`),
   getStatistics: (params) => api.get('/progress/records/statistics/', { params }),
+  getReminders: (params) => api.get('/progress/records/reminders/', { params }),
   getCheckins: (params) => api.get('/progress/checkin/', { params }),
   checkinToday: () => api.post('/progress/checkin/today/'),
   getStreak: () => api.get('/progress/checkin/streak/'),
