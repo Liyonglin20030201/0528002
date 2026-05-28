@@ -70,3 +70,32 @@ export const moderationService = {
   createReport: (data) => api.post('/moderation/reports/', data),
   getMyReports: () => api.get('/moderation/reports/my_reports/'),
 };
+
+export const progressService = {
+  getRecords: (params) => api.get('/progress/records/', { params }),
+  createRecord: (data) => api.post('/progress/records/', data),
+  updateRecord: (id, data) => api.patch(`/progress/records/${id}/`, data),
+  deleteRecord: (id) => api.delete(`/progress/records/${id}/`),
+  getStatistics: (params) => api.get('/progress/records/statistics/', { params }),
+  getCheckins: (params) => api.get('/progress/checkin/', { params }),
+  checkinToday: () => api.post('/progress/checkin/today/'),
+  getStreak: () => api.get('/progress/checkin/streak/'),
+};
+
+export const quizService = {
+  getBanks: (params) => api.get('/quiz/banks/', { params }),
+  getBankDetail: (id) => api.get(`/quiz/banks/${id}/`),
+  submitExam: (bankId, data) => api.post(`/quiz/banks/${bankId}/submit/`, data),
+  getRecords: (params) => api.get('/quiz/records/', { params }),
+  getWrongQuestions: (params) => api.get('/quiz/wrong/', { params }),
+  toggleMastered: (id) => api.post(`/quiz/wrong/${id}/toggle_mastered/`),
+  deleteWrong: (id) => api.delete(`/quiz/wrong/${id}/`),
+};
+
+export const pointsService = {
+  getMyPoints: () => api.get('/points/my_points/'),
+  getLogs: () => api.get('/points/logs/'),
+  signIn: () => api.post('/points/sign_in/'),
+  getLeaderboard: () => api.get('/points/leaderboard/'),
+  getLevelInfo: () => api.get('/points/level_info/'),
+};

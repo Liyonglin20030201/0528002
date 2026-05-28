@@ -10,6 +10,9 @@ import {
   UserOutlined,
   BellOutlined,
   ScheduleOutlined,
+  LineChartOutlined,
+  FormOutlined,
+  TrophyOutlined,
 } from '@ant-design/icons';
 import { messageService } from '../services';
 
@@ -22,6 +25,9 @@ const menuItems = [
   { key: '/resources', icon: <CloudDownloadOutlined />, label: <Link to="/resources">资源下载</Link> },
   { key: '/topics', icon: <CommentOutlined />, label: <Link to="/topics">话题讨论</Link> },
   { key: '/studyplan', icon: <ScheduleOutlined />, label: <Link to="/studyplan">学习计划</Link> },
+  { key: '/progress', icon: <LineChartOutlined />, label: <Link to="/progress">学习进度</Link> },
+  { key: '/quiz', icon: <FormOutlined />, label: <Link to="/quiz">在线刷题</Link> },
+  { key: '/points', icon: <TrophyOutlined />, label: <Link to="/points">积分等级</Link> },
 ];
 
 function AppLayout({ children, user, onLogout }) {

@@ -28,6 +28,9 @@ INSTALLED_APPS = [
     'apps.messages',
     'apps.studyplan',
     'apps.moderation',
+    'apps.studyprogress',
+    'apps.quiz',
+    'apps.points',
 ]
 
 MIDDLEWARE = [

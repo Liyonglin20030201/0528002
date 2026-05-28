@@ -13,6 +13,9 @@ urlpatterns = [
     path('api/messages/', include('apps.messages.urls')),
     path('api/studyplan/', include('apps.studyplan.urls')),
     path('api/moderation/', include('apps.moderation.urls')),
+    path('api/progress/', include('apps.studyprogress.urls')),
+    path('api/quiz/', include('apps.quiz.urls')),
+    path('api/points/', include('apps.points.urls')),
 ]
 
 if settings.DEBUG:

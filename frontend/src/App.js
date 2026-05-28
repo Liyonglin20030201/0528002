@@ -22,6 +22,11 @@ import Chat from './pages/Chat';
 import StudyPlan from './pages/StudyPlan';
 import StudyPlanDetail from './pages/StudyPlanDetail';
 import MyReports from './pages/MyReports';
+import StudyProgress from './pages/StudyProgress';
+import QuizList from './pages/QuizList';
+import QuizExam from './pages/QuizExam';
+import WrongBook from './pages/WrongBook';
+import Points from './pages/Points';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -69,6 +74,11 @@ function App() {
             <Route path="/studyplan" element={user ? <StudyPlan /> : <Navigate to="/login" />} />
             <Route path="/studyplan/:id" element={user ? <StudyPlanDetail /> : <Navigate to="/login" />} />
             <Route path="/my-reports" element={user ? <MyReports /> : <Navigate to="/login" />} />
+            <Route path="/progress" element={user ? <StudyProgress /> : <Navigate to="/login" />} />
+            <Route path="/quiz" element={user ? <QuizList /> : <Navigate to="/login" />} />
+            <Route path="/quiz/exam/:id" element={user ? <QuizExam /> : <Navigate to="/login" />} />
+            <Route path="/quiz/wrong" element={user ? <WrongBook /> : <Navigate to="/login" />} />
+            <Route path="/points" element={user ? <Points /> : <Navigate to="/login" />} />
           </Routes>
         </AppLayout>
       </Router>
